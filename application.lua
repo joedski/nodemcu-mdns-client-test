@@ -9,6 +9,8 @@ application.state = {
   isConnected = false
 }
 
+application.timeout = 10.0
+
 function application.main()
   print('Starting...!')
   wifi.setmode(wifi.STATION)
@@ -30,18 +32,18 @@ function application.disconnect()
   application.state.isConnected = false
 
   wifi.sta.disconnect(function (apinfo)
-    print('Disconnected!')
+    print('Disconnected!\n> ')
   end)
 end
 
 function application.onConnect(apinfo)
-  print('Connected!')
+  print('\nConnected!')
   print('  SSID: '..apinfo.SSID)
   print('  BSSID: '..apinfo.BSSID)
   print('  channel: '..apinfo.channel)
 
   application.state.isConnected = true
-  application.findDatamunch()
+  application.queryLocalCosmos()
 end
 
 function application.onGetIp(ipinfo)
@@ -49,15 +51,15 @@ function application.onGetIp(ipinfo)
 
   wifi.eventmon.unregister(wifi.eventmon.STA_GOT_IP)
   application.state.hasIp = true
-  application.findDatamunch()
+  application.queryLocalCosmos()
 end
 
-function application.findDatamunch()
+function application.queryLocalCosmos()
   if application.state.isConnected and application.state.hasIp then
-    print('Looking for "datamunch.local"...')
+    print('Querying the local cosmos for '..application.timeout..' seconds...')
 
     local ip = wifi.sta.getip()
-    mdnsclient.query(nil, nil, ip, application.onQueryMdns)
+    mdnsclient.query(nil, application.timeout, ip, application.onQueryMdns)
   end
 end
 
@@ -65,7 +67,7 @@ function application.onQueryMdns(error, results)
   if error then
     print('Error completing mDNS Query: '..error)
   else
-    print('mDNS Query Results:')
+    print('Time\'s up!  mDNS Query Results:')
     for k,v in ipairs(results) do
       print('  '..k)
       print('    name: '..v.name)
